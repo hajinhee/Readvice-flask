@@ -33,7 +33,7 @@ class Solution:
         L = tf.add(tf.matmul(X, W),b)
         # 가중치와 편향을 이용해 계산한 결과 값에
         L = tf.nn.relu(L)
-        model = tf.nn.softmax(L)
+        self.model = tf.nn.softmax(L)
         # TF 에서 기본적으로 제공하는 활성화 함수인 ReLU 함수를 적용
         # softmax() 를 사용해서 출력값을 사용하기 쉽게 만듦
         # 소프트맥스 함수는 다음처럼 결과값을 전체합이 1인 확률로 만들어주는 함수
@@ -42,36 +42,31 @@ class Solution:
         # **********
         # 신경망 학습 모델
         # **********
-        cost = tf.reduce_mean(-tf.reduce_sum(Y * tf.log(model), axis = 1))
+        self.cost = tf.reduce_mean(-tf.reduce_sum(Y * tf.log(self.model), axis = 1))
         optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.01)
-        self.train_op = optimizer.minimize(cost)
+        self.train_op = optimizer.minimize(self.cost)
         self.X = X
         self.Y = Y
-        self.model = model
-        self.cost = cost
 
     def fit(self):
-        train_op = self.train_op
         X = self.X
         Y = self.Y
-        cost = self.cost
         
         sess = tf.Session() 
         init = tf.global_variables_initializer()
         sess.run(init)
         for step in range(100):
-            sess.run(train_op, {X: x_data, Y: y_data})
+            sess.run(self.train_op, {X: x_data, Y: y_data})
             if (step + 1) % 10 == 10:
-                print(step +1, sess.run(cost, {X: x_data, Y: y_data}))
+                print(step +1, sess.run(self.cost, {X: x_data, Y: y_data}))
         self.sess = sess
 
     def eval(self):
-        model = self.model
         X = self.X
         Y = self.Y
         sess =self.sess
 
-        prediction = tf.argmax(model, 1)
+        prediction = tf.argmax(self.model, 1)
         target = tf.argmax(Y, 1)
         print('예측값', sess.run(prediction, {X: x_data}))
         print('실제값', sess.run(target, {Y: y_data}))
