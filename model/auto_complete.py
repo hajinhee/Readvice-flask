@@ -1,48 +1,46 @@
+import os
+import sys
+import tensorflow.compat.v1 as tf
+import numpy as np
+
 class Solution:
-    def __init__(self) -> None:
-        import tensorflow as tf
-        import numpy as np
-
-        char_arr = ['a', 'b', 'c', 'd', 'e', 'f', 'g',
-                'h', 'i', 'j', 'k', 'l', 'm', 'n',
-                'o', 'p', 'q', 'r', 's', 't', 'u',
-                'v', 'w', 'x', 'y', 'z']
-
-        num_dic = {n: i for i, n in enumerate(char_arr)}
-
-        # ohe 을 위한 연관 배열
-        # {'a':0, 'b':2, 'c':3 ....}
-        dic_len = len(num_dic)
-
-        seq_data = ['word', 'wood', 'deep', 'dive', 'cold', 'cool', 'load', 'love', 'kiss', 'kind']
+    def __init__(self, char_arr, seq_data) -> None:
+        self.X = None
+        self.Y = None
+        self.cost = None
+        self.model1 = None
+        self.sess = None  
+        self.optimizer = None
+        self.num_dic = {n: i for i, n in enumerate(char_arr)}
+        self.dic_len = len(self.num_dic)
 
 
-        def make_batch(seq_data):
-            input_batch = []
-            target_batch = []
+    def make_batch(self):
+        input_batch = []
+        target_batch = []
+        num_dic = self.num_dic
 
-            for seq in seq_data:
-                input = [num_dic[n] for n in seq[:-1]]
-                target = num_dic[seq[-1]]  # -1 은 all
-                input_batch.append(np.eye(dic_len)[input])
-                target_batch.append(target)
-            return input_batch, target_batch
+        for seq in seq_data:
+            input = [num_dic[n] for n in seq[:-1]]
+            target = num_dic[seq[-1]]  # -1 은 all
+            input_batch.append(np.eye(self.dic_len)[input])
+            target_batch.append(target)
+        return input_batch, target_batch
 
-        # ****
-        # 옵션 설정
-        # ****
-
+    # ****
+    # 옵션 설정
+    # ****
+    def create_model(self):
         learning_rate = 0.01
         n_hidden = 128
-        total_epoch = 30 # 훈련횟수
         n_step = 3
         # 타입스텝: [1, 2, 3] => 3
         # RNN 을 구성하는 시퀀스의 갯수
-        n_input = n_class = dic_len
+        n_input = n_class = self.dic_len
         # 입력값 크기. 알파벳에 대한 ohe 이므로 26개가 됨
         # 따라서 c 를 선택하면 [0 0 1 0 0 0 .....0]
         # 출력값도 입력값과 마찬가지로 26개의 알파벳으로 분류합니다.
-        n_input = n_class = dic_len
+        n_input = n_class = self.dic_len
 
         # *******
         # 신경망 모델 구성
@@ -71,34 +69,42 @@ class Solution:
         outputs = outputs[-1]
         model1 = tf.matmul(outputs, W) + b
 
-        cost = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
+        self.cost = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
             logits=model1, labels=Y
         ))
-        optimizer = tf.train.AdamOptimizer(learning_rate).minimize(cost)
+        self.optimizer = tf.train.AdamOptimizer(learning_rate).minimize(self.cost)
+        self.X = X
+        self.Y = Y
+        self.model1 =model1
 
-        # *******
-        # 신경망 모델 학습
-        # *******
-
+    def fit(self):
+        total_epoch = 30 # 훈련횟수
+        X = self.X
+        Y = self.Y
+        cost = self.cost
+        optimizer = self.optimizer
         sess = tf.Session()
         sess.run(tf.global_variables_initializer())
 
-        input_batch, target_batch = make_batch(seq_data)
+        input_batch, target_batch = self.make_batch()
         for epoch in range(total_epoch):
             _, loss = sess.run([optimizer, cost],
                             {X: input_batch, Y: target_batch})
             print("Epoch: ", "%04d" % (epoch + 1),
                 "cost: ", "{:.6f}".format(loss))
         print('===최적화 완료===')
+        self.sess = sess
 
-        # *******
-        # 신경망 모델 검증
-        # *******
+    def eval(self):
+        X = self.X
+        Y = self.Y
+        sess =self.sess
+        model1 = self.model1
         prediction = tf.cast(tf.argmax(model1, 1), tf.int32)
         prediction_check = tf.equal(prediction, Y)
         # 문자열 값비교 equal
         accuracy = tf.reduce_mean(tf.cast(prediction_check, tf.float32))
-        input_batch, target_batch = make_batch(seq_data)
+        input_batch, target_batch = self.make_batch()
 
         predict, accuracy_val = sess.run([prediction, accuracy],
                                         {X: input_batch, Y: target_batch})
@@ -112,3 +118,19 @@ class Solution:
         print('입력값: ', [W[:3] + ' ' for W in seq_data])
         print('예측값: ', predict_words)
         print('정확도: ', accuracy_val)
+
+
+if __name__=='__main__':
+    char_arr = ['a', 'b', 'c', 'd', 'e', 'f', 'g',
+                'h', 'i', 'j', 'k', 'l', 'm', 'n',
+                'o', 'p', 'q', 'r', 's', 't', 'u',
+                'v', 'w', 'x', 'y', 'z']
+    # ohe 을 위한 연관 배열
+    # {'a':0, 'b':2, 'c':3 ....}
+    seq_data = ['word', 'wood', 'deep', 'dive', 'cold', 'cool', 'load', 'love', 'kiss', 'kind']
+    tf.disable_v2_behavior()
+    s = Solution(char_arr, seq_data)
+    s.create_model()
+    s.fit()
+    s.eval()
+    
