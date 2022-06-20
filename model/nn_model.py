@@ -20,8 +20,8 @@ class Solution:
         self.sess = None       
 
     def create_model(self):
-        self.X = tf.placeholder(tf.float32)
-        self.Y = tf.placeholder(tf.float32)
+        X = tf.placeholder(tf.float32)
+        Y = tf.placeholder(tf.float32)
         W = tf.Variable(tf.random_uniform([2, 3], -1, 1.))
         # 신경망 neural network 앞으로는 nn 으로 표기
         # nn 은 2차원으로 [입력층(특성), 출력층(레이블)] -> [2, 3] 으로 정합니다
@@ -30,7 +30,7 @@ class Solution:
         # W 는 가중치. 앞으로는 가중치는 W 로 표기
         # b 는 각 레이어의 아웃풋 갯수로 설정함.
         # b 는 최종 결과값의 분류 갯수인 3으로 설정함.
-        L = tf.add(tf.matmul(self.X, W),b)
+        L = tf.add(tf.matmul(X, W),b)
         # 가중치와 편향을 이용해 계산한 결과 값에
         L = tf.nn.relu(L)
         model = tf.nn.softmax(L)
@@ -42,14 +42,17 @@ class Solution:
         # **********
         # 신경망 학습 모델
         # **********
-        cost = tf.reduce_mean(-tf.reduce_sum(self.Y * tf.log(model), axis = 1))
+        cost = tf.reduce_mean(-tf.reduce_sum(Y * tf.log(model), axis = 1))
         optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.01)
         self.train_op = optimizer.minimize(cost)
+        self.X = X
+        self.Y = Y
         self.model = model
+        self.cost = cost
 
     def fit(self):
         train_op = self.train_op
-        X =self.X
+        X = self.X
         Y = self.Y
         cost = self.cost
         
