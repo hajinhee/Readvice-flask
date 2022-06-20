@@ -8,12 +8,14 @@ import tensorflow.compat.v1 as tf
 
 class CalculatorModel:
     def __init__(self) -> None:
-        self.model = os.path.join(basedir, 'model')
+        # 'model' = dirname 
+        self.model = os.path.join(basedir, 'model') 
         self.data = os.path.join(self.model, 'data')
 
     def calc(self, num1, num2,opcode):
         print(f'훅에 전달된 num1 : {num1}, num2 : {num2}, opcode : {opcode}')
         tf.reset_default_graph()
+        # 'with'이 있는 부분은 '훈련'
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             tf.train.import_meta_graph(self.model + '/calculator_'+opcode+'/model-1000.meta')
