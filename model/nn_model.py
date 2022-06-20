@@ -5,36 +5,23 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from config import basedir
 import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
 import numpy as np
 
 
 class Solution:
-    def __init__(self) -> None:
-        self.model = os.path.join(basedir, 'model')
-        # [털, 날개]
-        self.x_data = np.array([[0, 0],[1, 0],[1, 1],[0, 0],[0, 0], [0, 1]])
-        #기타, 포유류, 조류
-        # 원핫 인코딩
-        self.y_data = np.array([
-            [1, 0, 0], # 기타
-            [0, 1, 0], # 포유류
-            [0, 0, 1], # 조류
-            [1, 0, 0], # 기타
-            [0, 1, 0], # 포유류
-            [0, 0, 1] # 조류
-        ])
-        # *******
-        # 신경망 모델 구성
-        # *******
-        self.X = tf.placeholder(tf.float32)
-        self.Y = tf.placeholder(tf.float32)
-
-    def hook(self):
-        s = Solution()
-        s.train_model(s.create_model())
+    def __init__(self, x_data, y_data) -> None:
+        self.x_data = x_data
+        self.y_data = y_data
+        self.train_op = None
+        self.X = None
+        self.Y = None
+        self.cost = None
+        self.model = None
+        self.sess = None       
 
     def create_model(self):
+        self.X = tf.placeholder(tf.float32)
+        self.Y = tf.placeholder(tf.float32)
         W = tf.Variable(tf.random_uniform([2, 3], -1, 1.))
         # 신경망 neural network 앞으로는 nn 으로 표기
         # nn 은 2차원으로 [입력층(특성), 출력층(레이블)] -> [2, 3] 으로 정합니다
@@ -43,7 +30,7 @@ class Solution:
         # W 는 가중치. 앞으로는 가중치는 W 로 표기
         # b 는 각 레이어의 아웃풋 갯수로 설정함.
         # b 는 최종 결과값의 분류 갯수인 3으로 설정함.
-        L = tf.add(tf.matmul(self.X, W), b)
+        L = tf.add(tf.matmul(self.X, W),b)
         # 가중치와 편향을 이용해 계산한 결과 값에
         L = tf.nn.relu(L)
         model = tf.nn.softmax(L)
@@ -51,33 +38,36 @@ class Solution:
         # softmax() 를 사용해서 출력값을 사용하기 쉽게 만듦
         # 소프트맥스 함수는 다음처럼 결과값을 전체합이 1인 확률로 만들어주는 함수
         # 예) [8.04, 2.76, -6.52] -> [0.53, 0.24, 0.23]
-        
-
         # 비용함수를 최소화 시키면 -> 경사도를 0로 만들어 가면 그 값이 최적화된 값일 것이다...
         # **********
         # 신경망 학습 모델
         # **********
-        return model
+        cost = tf.reduce_mean(-tf.reduce_sum(self.Y * tf.log(model), axis = 1))
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.01)
+        self.train_op = optimizer.minimize(cost)
+        self.model = model
 
-    def train_model(self, model):
+    def fit(self):
+        train_op = self.train_op
         X =self.X
         Y = self.Y
-        x_data = self.x_data
-        y_data = self.y_data
-        cost = tf.reduce_mean(-tf.reduce_sum(Y * tf.log(model), axis = 1))
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.01)
-        train_op = optimizer.minimize(cost)
+        cost = self.cost
+        
+        sess = tf.Session() 
         init = tf.global_variables_initializer()
-        sess = tf.Session()
         sess.run(init)
         for step in range(100):
             sess.run(train_op, {X: x_data, Y: y_data})
             if (step + 1) % 10 == 10:
                 print(step +1, sess.run(cost, {X: x_data, Y: y_data}))
+        self.sess = sess
 
-        # *********
-        # 결과확인
-        # ********
+    def eval(self):
+        model = self.model
+        X = self.X
+        Y = self.Y
+        sess =self.sess
+
         prediction = tf.argmax(model, 1)
         target = tf.argmax(Y, 1)
         print('예측값', sess.run(prediction, {X: x_data}))
@@ -91,4 +81,20 @@ class Solution:
 
 
 if __name__=='__main__':
-    Solution().hook()
+    x_data = np.array([[0, 0],[1, 0],[1, 1],[0, 0],[0, 0], [0, 1]])
+    #기타, 포유류, 조류
+    # 원핫 인코딩
+    y_data = np.array([
+        [1, 0, 0], # 기타
+        [0, 1, 0], # 포유류
+        [0, 0, 1], # 조류
+        [1, 0, 0], # 기타
+        [0, 1, 0], # 포유류
+        [0, 0, 1] # 조류
+    ])
+    tf.disable_v2_behavior()
+    s = Solution(x_data, y_data)
+    s.create_model()
+    s.fit()
+    s.eval()
+    
