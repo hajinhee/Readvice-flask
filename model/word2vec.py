@@ -14,12 +14,16 @@ class Solution:
         self.word_list = list(set(self.word_list))
         self.batch_size = None
         self.train_op = None
-        self.sess = None
         self.loss = None
         self.inputs = None
         self.labels = None
         self.embeddings = None
         self.trained_embeddings = None
+
+        self.learning_rate = 0.1
+        self.batch_size = 20
+        self.embedding_size = 2
+        self.num_sampled = 15
        
     
     def create_skip_grams(self):
@@ -49,16 +53,12 @@ class Solution:
         return random_inputs, random_labels
 
     def create_model(self):
-        learning_rate = 0.1
-        batch_size = 20
-        embedding_size = 2
-        num_sampled = 15
         voc_size = len(self.word_list)
-        self.inputs = tf.placeholder(tf.int32, shape=[batch_size])
-        self.labels = tf.placeholder(tf.int32, shape=[batch_size, 1])                
+        self.inputs = tf.placeholder(tf.int32, shape=[self.batch_size])
+        self.labels = tf.placeholder(tf.int32, shape=[self.batch_size, 1])                
         # tf.nn.nce_loss 를 사용하려면 출력값을 이렇게 [batch_size, 1] 구성해야함
 
-        self.embeddings = tf.Variable(tf.random_uniform([voc_size, embedding_size], -1.0, 1.0))
+        self.embeddings = tf.Variable(tf.random_uniform([voc_size, self.embedding_size], -1.0, 1.0))
         # word2vec 모델의 결과 값인 임베딩 벡터를 저장할 변수
         # 총 단어의 갯수와 임베딩 갯수를 크기로 하는 두개의 차원을 갖습니다.
         # embedding vector 의 차원에서 학습할 입력값에 대한 행들을 뽑아옵니다.
@@ -73,16 +73,13 @@ class Solution:
 
         # nce_loss 함수에서 사용할 변수를 정의 함
 
-        nce_weights = tf.Variable(tf.random_uniform([voc_size, embedding_size], -1.0, 1.0))
+        nce_weights = tf.Variable(tf.random_uniform([voc_size, self.embedding_size], -1.0, 1.0))
         nce_biases = tf.Variable(tf.zeros([voc_size]))
 
-        loss = tf.reduce_mean(
-            tf.nn.nce_loss(nce_weights, nce_biases, self.labels, selected_embed, num_sampled, voc_size)
+        self.loss = tf.reduce_mean(
+            tf.nn.nce_loss(nce_weights, nce_biases, self.labels, selected_embed, self.num_sampled, voc_size)
         )
-        train_op = tf.train.AdamOptimizer(learning_rate).minimize(loss)
-        self.batch_size = batch_size
-        self.train_op = train_op
-        self.loss = loss
+        self.train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
 
 
     def fit(self):
@@ -100,7 +97,6 @@ class Solution:
                     print("loss at step ", step, ": ", loss_val)
             self.trained_embeddings = self.embeddings.eval()
             # with 구문 안에서는 sess.run 대신에 간단히 eval() 함수를 사용할 수 있음
-        self.sess = sess    
 
 
 

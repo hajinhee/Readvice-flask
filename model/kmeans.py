@@ -14,8 +14,6 @@ import tensorflow as tf
 
 class Kmean():
     def execute(self):
-
-
         vectors_set = []
         num_points = 2000
 

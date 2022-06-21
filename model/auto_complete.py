@@ -14,6 +14,10 @@ class Solution:
         self.num_dic = {n: i for i, n in enumerate(char_arr)}
         self.dic_len = len(self.num_dic)
 
+        self.learning_rate = 0.01
+        self.n_hidden = 128
+        self.n_step = 3
+
 
     def make_batch(self):
         input_batch = []
@@ -31,9 +35,10 @@ class Solution:
     # 옵션 설정
     # ****
     def create_model(self):
-        learning_rate = 0.01
-        n_hidden = 128
-        n_step = 3
+        learning_rate = self.learning_rate 
+        n_hidden = self.n_hidden
+        n_step = self.n_step
+
         # 타입스텝: [1, 2, 3] => 3
         # RNN 을 구성하는 시퀀스의 갯수
         n_input = n_class = self.dic_len
@@ -46,8 +51,8 @@ class Solution:
         # 신경망 모델 구성
         # *******
 
-        X = tf.placeholder(tf.float32, [None, n_step, n_input])
-        Y = tf.placeholder(tf.int32, [None])
+        self.X = tf.placeholder(tf.float32, [None, n_step, n_input])
+        self.Y = tf.placeholder(tf.int32, [None])
 
         W = tf.Variable(tf.random_normal([n_hidden, n_class]))
         b = tf.Variable(tf.random_normal([n_class]))
@@ -61,21 +66,18 @@ class Solution:
         multi_cell = tf.nn.rnn_cell.MultiRNNCell([cell1, cell2])
         # 여러개의 셀을 조합한 RNN 셀을 생성
 
-        outputs, states = tf.nn.dynamic_rnn(multi_cell, X, dtype = tf.float32)
+        outputs, states = tf.nn.dynamic_rnn(multi_cell, self.X, dtype = tf.float32)
         #  tf.nn.dynamic_rnn 을 이용해 순환 신경망을 생성
 
         # 최종 결과는 ohe 형식으로 생성
         outputs = tf.transpose(outputs, [1, 0, 2])
         outputs = outputs[-1]
-        model1 = tf.matmul(outputs, W) + b
+        self.model1 = tf.matmul(outputs, W) + b
 
         self.cost = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
-            logits=model1, labels=Y
+            logits=self.model1, labels=self.Y
         ))
         self.optimizer = tf.train.AdamOptimizer(learning_rate).minimize(self.cost)
-        self.X = X
-        self.Y = Y
-        self.model1 =model1
 
     def fit(self):
         total_epoch = 30 # 훈련횟수
@@ -83,7 +85,8 @@ class Solution:
         Y = self.Y
         cost = self.cost
         optimizer = self.optimizer
-        sess = tf.Session()
+        self.sess = tf.Session()
+        sess = self.sess
         sess.run(tf.global_variables_initializer())
 
         input_batch, target_batch = self.make_batch()
@@ -93,12 +96,10 @@ class Solution:
             print("Epoch: ", "%04d" % (epoch + 1),
                 "cost: ", "{:.6f}".format(loss))
         print('===최적화 완료===')
-        self.sess = sess
 
     def eval(self):
         X = self.X
         Y = self.Y
-        sess =self.sess
         model1 = self.model1
         prediction = tf.cast(tf.argmax(model1, 1), tf.int32)
         prediction_check = tf.equal(prediction, Y)
@@ -106,7 +107,7 @@ class Solution:
         accuracy = tf.reduce_mean(tf.cast(prediction_check, tf.float32))
         input_batch, target_batch = self.make_batch()
 
-        predict, accuracy_val = sess.run([prediction, accuracy],
+        predict, accuracy_val = self.sess.run([prediction, accuracy],
                                         {X: input_batch, Y: target_batch})
 
         predict_words = []

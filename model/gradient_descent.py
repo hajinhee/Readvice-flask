@@ -1,6 +1,7 @@
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
+# GradientDescent => Algorithm
 class GradientDescent():
     def execute(self):
 

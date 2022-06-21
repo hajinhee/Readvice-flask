@@ -12,7 +12,7 @@ class CalculatorModel:
         self.model = os.path.join(basedir, 'model') 
         self.data = os.path.join(self.model, 'data')
 
-    def calc(self, num1, num2,opcode):
+    def calc(self, num1, num2, opcode):
         print(f'훅에 전달된 num1 : {num1}, num2 : {num2}, opcode : {opcode}')
         tf.reset_default_graph()
         # 'with'이 있는 부분은 '훈련'

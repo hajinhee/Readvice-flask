@@ -1,25 +1,33 @@
+import tensorflow.compat.v1 as tf
+import numpy as np
+import matplotlib.pyplot as plt
+import tensorflow_datasets as tfds
+from tensorflow.examples.tutorials.mnist import input_data
+
 class Solution:
     def __init__(self) -> None:
-        import tensorflow as tf
-        import numpy as np
-        import matplotlib.pyplot as plt
-
-        from tensorflow.examples.tutorials.mnist import input_data
-
-        mnist = input_data.read_data_sets("./mnist/data/", one_hot=True)
-
+        self.mnist = input_data.read_data_sets("./mnist/data/", one_hot=True)
         # ******
         # 옵션 설정
         # ******
-        learning_rate = 0.01
-        training_epoch = 20
-        batch_size = 100
+        self.learning_rate = 0.01
+        self.training_epoch = 20
+        self.batch_size = 100
         # 신경망 레이어 구성옵션
-        n_hidden = 256 # 히든 레이어의 뉴런 갯수
-        n_input = 28 * 28
+        self.n_hidden = 256 # 히든 레이어의 뉴런 갯수
+        self.n_input = 28 * 28
+        self.sample_size = 10
+
+        self.X = None
+        self.sess = None
         # ******
         # 신경망 모델 구성
         # ******
+
+    def create_model(self):    
+        n_hidden = self.n_hidden
+        n_input = self.n_input
+
         X = tf.placeholder(tf.float32, [None, n_input])
         # Y 는 선언하지 않음. 입력값을 Y 로 사용하기 때문
 
@@ -39,41 +47,51 @@ class Solution:
         # 차이를 손실값으로 설정합니다.
 
         cost = tf.reduce_mean(tf.pow(X - decoder, 2))
-        optimizer = tf.train.RMSPropOptimizer(learning_rate).minimize(cost)
+        optimizer = tf.train.RMSPropOptimizer(self.learning_rate).minimize(cost)
+        self.X = X
 
-        # ******
-        # 신경망 모델 학습
-        # ******
+    def fit(self):
         init = tf.global_variables_initializer()
         sess = tf.Session()
         sess.run(init)
 
-        total_batch = int(mnist.train.num_examples/batch_size)
-        for epoch in range(training_epoch):
+        total_batch = int(self.mnist.train.num_examples/self.batch_size)
+        for epoch in range(self.training_epoch):
             total_cost = 0
 
             for i in range(total_batch):
-                batch_xs, batch_ys = mnist.train.next_batch(batch_size)
+                batch_xs, batch_ys = self.mnist.train.next_batch(self.batch_size)
                 _, cost_val = sess.run([optimizer, cost],
-                                    {X: batch_xs})
+                                    {self.X: batch_xs})
                 total_cost += cost_val
             print('Epoch: ','%04d' % (epoch + 1),
                 'Avg Cost: ','{:.4f}'.format(total_cost / total_batch))
 
         print('-----최적화 완료------')
+        self.sess = sess
 
         # ******
         # 신경망 모델 테스트(검정)
         # ******
-        sample_size = 10
-        samples = sess.run(decoder, {X: mnist.test.images[:sample_size]})
+    def eval(self):
+        sample_size = self.sample_size
+
+        samples = self.sess.run(decoder, {self.X: self.mnist.test.images[:sample_size]})
 
         fig, ax = plt.subplots(2, sample_size, figsize=(sample_size, 2))
 
         for i in range(sample_size):
             ax[0][i].set_axis_off()
             ax[1][i].set_axis_off()
-            ax[0][i].imshow(np.reshape(mnist.test.images[i], (28, 28))) # mnist 사이즈가 28
+            ax[0][i].imshow(np.reshape(self.mnist.test.images[i], (28, 28))) # mnist 사이즈가 28
             ax[1][i].imshow(np.reshape(samples[i], (28, 28)))
 
         plt.show()
+
+if __name__=='__main__':
+    tf.disable_v2_behavior()
+    s = Solution()
+    s.create_model()
+    s.fit()
+    s.eval()
+    
