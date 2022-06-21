@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -19,19 +20,20 @@
       <input type="text" name="avg_temp" value="10">
       <br>
       최저 온도:<br>
-      <input type="text" name="min_temp" value="-5">
+      <input type="text" name="min_temp" value="-5" >
       <br>
       최고 온도:<br>
-      <input type="text" name="max_temp" value="20">
+      <input type="text" name="max_temp" value="20" >
       <br>
       강수량:<br>
-      <input type="text" name="rain_fall" value="0.8">
+      <input type="text" name="rain_fall" value="0.8" >
       <br>
+
         <br>
       <input type="submit" value="Submit">
     </form>
     {%  if result %}
-        <p><h1>결과 : {{result}}</h1></p>
+    <p>결과 : {{result}}</p>
     {% endif %}
 </body>
 </html>
