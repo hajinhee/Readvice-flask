@@ -30,7 +30,6 @@ class Cabbage:
 
     def create_model(self): # 모델생성
         # 텐서모델 초기화(모델템플릿 생성)
-        
         # 확률변수 데이터
         self.preprocessing()
         # 선형식(가설)제작 y = Wx+b
@@ -53,8 +52,7 @@ class Cabbage:
                                         feed_dict={X: self.x_data, Y: self.y_data})
             if step % 500 == 0:
                 print('# %d 손실비용: %d'%(step, cost_))
-                print('- 배추가격: %d '%(hypo_[0]))
-        
+                print('- 배추가격: %d '%(hypo_[0]))   
         # 모델저장
         saver = tf.train.Saver()
         saver.save(sess, os.path.join(self.basedir, 'cabbage', 'cabbage.ckpt'), global_step=1000)
